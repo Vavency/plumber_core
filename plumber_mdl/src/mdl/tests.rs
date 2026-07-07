@@ -124,6 +124,14 @@ impl FileSpec for MdlSpec {
         assert_eq!(header.texture_paths().unwrap(), self.texture_paths);
         eprintln!("  Texture paths ok");
 
+        let skin_families = header.skin_families_tref().unwrap();
+        for i in 0..skin_families.len() {
+            eprintln!("  Verifying skin family {i}");
+            for tex in &skin_families[i] {
+                eprintln!("    Verifying {:?}", tex.name().unwrap());
+            }
+        }
+        
         for (i, body_part) in header.iter_body_parts().unwrap().enumerate() {
             eprintln!("  Verifying body part {i}");
             self.body_parts[i].verify(body_part);
