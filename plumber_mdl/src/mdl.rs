@@ -870,6 +870,52 @@ impl<'a> HeaderRef<'a> {
                 bytes,
             }))
     }
+
+    /// Gives `Vec<Vec<i16>>` that should corspond to texture ids.
+    pub fn skin_families(&self) -> Result<Vec<Vec<i16>>> {
+        let mut skin_family = Vec::new();
+        let count = self.header_1.skin_family_count;
+        let offset = self.header_1.skin_family_offset - 1;
+        let refcount = self.header_1.skin_reference_count;
+
+        if (count * refcount * 2 + offset) as usize > self.bytes.len() || (count * refcount * 2 + offset) < 0 {
+            Err(corrupted("skin table attempting to read out of bounds"))?;
+        }
+
+        let mut bi = self.bytes.into_iter().skip(offset as usize);
+        for _ in 0..count {
+            let mut skin_grouping =  Vec::new();
+            for _ in 0..refcount {
+                skin_grouping.push(
+                    ((*bi.next().ok_or_else(|| corrupted("skins out of bounds or corruted"))? as i16) << 8) |
+                    (*bi.next().ok_or_else(|| corrupted("skins out of bounds or corruted"))? as i16)
+                );
+            }
+            skin_family.push(skin_grouping);
+        }
+        Ok(skin_family)
+    }
+
+    /// Returns `Vec<Vec<<TextureRef<'_>>>` mapped from `Self:skin_families()`.
+    pub fn skin_families_tref(&self) -> Result<Vec<Vec<TextureRef<'_>>>> {
+        let raw_skin_families = self.skin_families()?;
+        let textures = self.iter_textures()?;
+        
+        let mut tex = Vec::new();
+        for t in textures {
+            tex.push(t);
+        }
+
+        let mut mapped = Vec::new();
+        for sg in raw_skin_families {
+            let mut mapped_family = Vec::new();
+            for s in sg {
+                mapped_family.push(tex[s as usize]);
+            }
+            mapped.push(mapped_family);
+        }
+        Ok(mapped)
+    }
 }
 
 bitflags! {
