@@ -290,6 +290,37 @@ impl<'a> Verified<'a> {
 
     /// # Errors
     ///
+    /// Returns `Err` if a material path reading fails or a material isn't found or attepting to read out of bounds.
+    pub fn skinned_materials<'f>(
+        &self,
+        file_system: &'f OpenFileSystem
+    ) -> Result<Vec<Vec<Result<GamePathBuf>>>>
+    where 'a: 'f
+    {   
+        let texture_paths = self.mdl_header.texture_paths()?;
+        
+        let mut materials = Vec::new();
+        for sf in self.mdl_header.skin_families_tref()? {
+            let mut sfp = Vec::new();
+            for texture in sf {
+                sfp.push(find_material(texture, &texture_paths, file_system));
+            }
+            materials.push(sfp);
+        }
+        Ok(materials)
+    }
+
+    /// # Errors
+    /// 
+    /// Returns `Err` if the model header is somehow corrupted to read out of bounds.
+    pub fn skin_families(&self) -> Result<Vec<Vec<i16>>> {
+        self.mdl_header.skin_families()
+    }
+
+
+
+    /// # Errors
+    ///
     /// Returns `Err` if reading the bones fails due to corrupted mdl.
     pub fn bones(&self) -> Result<Vec<Bone<'_>>> {
         self.mdl_header

@@ -98,6 +98,26 @@ impl<M> MdlConfig<M> {
             }
         }
 
+        let mut skin_families = Vec::new();
+        for skin_family in verified.skinned_materials(context.fs())? {
+            let mut pushed_skin_family = Vec::new();
+            for result in skin_family {
+                match result {
+                    Ok(mut material) => {
+                        material.set_extension("");
+
+                        context.process(self.vmt_config, material.clone().into());
+                        pushed_skin_family.push(Some(material));
+                    }
+                    Err(err) => {
+                        warn!("model `{}`: material: {}", input, err);
+                        pushed_skin_family.push(None);
+                    }
+                }
+            }
+            skin_families.push(pushed_skin_family);
+        }
+
         let bones = verified.bones()?.into_iter().map(LoadedBone::new).collect();
 
         let animations = if self.import_animations {
@@ -130,6 +150,8 @@ impl<M> MdlConfig<M> {
                 .into(),
         };
 
+        let skin_families_raw = verified.skin_families()?;
+
         Ok((
             LoadedMdl {
                 name,
@@ -138,6 +160,8 @@ impl<M> MdlConfig<M> {
                 materials,
                 bones,
                 animations,
+                skin_families,
+                skin_families_raw,
             },
             info,
         ))
@@ -171,6 +195,8 @@ pub struct LoadedMdl {
     pub materials: Vec<Option<GamePathBuf>>,
     pub bones: Vec<LoadedBone>,
     pub animations: Vec<LoadedAnimation>,
+    pub skin_families: Vec<Vec<Option<GamePathBuf>>>,
+    pub skin_families_raw: Vec<Vec<i16>>,
 }
 
 #[derive(Debug, Clone)]

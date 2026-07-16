@@ -60,6 +60,7 @@ impl<M> PropConfig<M> {
         let scale = input.scale()?.map(|s| s * self.scale);
         let rotation = input.angles()?;
         let color = input.render_color()?.with_alpha(input.render_amt()?);
+        let skin = input.skin()?;
 
         Ok(LoadedProp {
             prop: input,
@@ -69,6 +70,7 @@ impl<M> PropConfig<M> {
             rotation,
             scale,
             color,
+            skin,
         })
     }
 }
@@ -83,6 +85,7 @@ pub struct LoadedProp<'a> {
     pub rotation: [f32; 3],
     pub scale: [f32; 3],
     pub color: RGBA8,
+    pub skin: i32,
 }
 
 #[derive(Debug, Error, Clone, Hash, PartialEq, Eq)]
